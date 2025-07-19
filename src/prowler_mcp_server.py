@@ -118,7 +118,7 @@ def get_latest_prowler_file() -> str:
     
     file_stat = latest_file.stat()
     result = f"""
-📁 **최신 Prowler 결과 파일**
+ **최신 Prowler 결과 파일**
 
 • **파일명**: {latest_file.name}
 • **전체 경로**: {latest_file}
@@ -126,7 +126,7 @@ def get_latest_prowler_file() -> str:
 • **수정 일시**: {datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
 • **파일 확장자**: {latest_file.suffix}
 
-🔍 **선택 근거**: 이 파일이 {OUTPUT_DIR} 폴더에서 가장 최근에 수정된 파일로, 최신 보안 점검 결과를 포함하고 있습니다.
+ **선택 근거**: 이 파일이 {OUTPUT_DIR} 폴더에서 가장 최근에 수정된 파일로, 최신 보안 점검 결과를 포함하고 있습니다.
 """
     return result
 
@@ -168,13 +168,13 @@ def analyze_prowler_results() -> str:
         report = f"""
 # 🛡️ Prowler 결과 분석
 
-## 📄 파일 정보
+##  파일 정보
 • **파일명**: {latest_file.name}
 • **크기**: {latest_file.stat().st_size:,} bytes
 • **수정일**: {datetime.fromtimestamp(latest_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
 • **파일 유형**: {analysis.get('file_type', '알 수 없음')}
 
-## 📊 분석 결과
+##  분석 결과
 """
         
         # HTML 파일 결과
@@ -182,7 +182,7 @@ def analyze_prowler_results() -> str:
             keywords = analysis.get("keyword_counts", {})
             
             report += f"""
-### 📈 보안 점검 상태 (키워드 기반)
+###  보안 점검 상태 (키워드 기반)
 • ✅ **PASS**: {keywords.get('PASS', 0)}개 발견
 • ❌ **FAIL**: {keywords.get('FAIL', 0)}개 발견
 
@@ -192,7 +192,7 @@ def analyze_prowler_results() -> str:
 • 🟡 **MEDIUM**: {keywords.get('MEDIUM', 0)}개 언급
 • 🟢 **LOW**: {keywords.get('LOW', 0)}개 언급
 
-### 📋 보고서 내용 미리보기
+###  보고서 내용 미리보기
 ```
 {analysis.get('text_preview', '내용 없음')}
 ```
@@ -201,12 +201,12 @@ def analyze_prowler_results() -> str:
         # CSV 파일 결과
         elif analysis.get("file_type") == "Prowler CSV Results":
             report += f"""
-### 📊 CSV 데이터 정보
+###  CSV 데이터 정보
 • **총 라인 수**: {analysis.get('total_lines', 0)}개
 • **데이터 행 수**: {analysis.get('data_rows', 0)}개
 • **헤더**: {analysis.get('header', '없음')[:100]}...
 
-### 📋 샘플 데이터
+###  샘플 데이터
 """
             sample_rows = analysis.get('sample_rows', [])
             for i, row in enumerate(sample_rows, 1):
@@ -215,7 +215,7 @@ def analyze_prowler_results() -> str:
         # JSON 파일 결과
         elif "JSON" in analysis.get("file_type", ""):
             report += f"""
-### 📊 JSON 데이터 정보
+###  JSON 데이터 정보
 • **데이터 타입**: {analysis.get('data_type', '알 수 없음')}
 • **항목 수**: {analysis.get('item_count', 'N/A')}
 • **주요 키**: {', '.join(analysis.get('sample_keys', []))}
@@ -224,11 +224,11 @@ def analyze_prowler_results() -> str:
         # 기타 파일
         else:
             report += f"""
-### 📊 파일 정보
+###  파일 정보
 • **내용 길이**: {analysis.get('content_length', 0)}자
 • **라인 수**: {analysis.get('line_count', 0)}개
 
-### 📋 내용 미리보기
+###  내용 미리보기
 ```
 {analysis.get('preview', '내용 없음')}
 ```
@@ -236,12 +236,12 @@ def analyze_prowler_results() -> str:
         
         # 참고 자료
         report += """
-## 📚 보안 분석 참고 자료
+##  보안 분석 참고 자료
 • [Prowler 공식 문서](https://docs.prowler.com/)
 • [KISA-ISMS-P 컴플라이언스](https://hub.prowler.com/compliance/kisa_isms_p_2023_aws)
 • [AWS 보안 모범 사례](https://aws.amazon.com/security/security-resources/)
 
-## 💡 권장사항
+##  권장사항
 1. **실패 항목 우선 검토**: FAIL 상태인 항목들을 우선적으로 해결
 2. **심각도별 대응**: CRITICAL > HIGH > MEDIUM > LOW 순서로 처리
 3. **정기적 점검**: 월 1회 이상 보안 점검 실시
@@ -284,21 +284,21 @@ def get_security_summary() -> str:
             grade = "🔴 개선 필요 (D등급)"
         
         summary = f"""
-# 🎯 보안 상태 요약
+#  보안 상태 요약
 
-## 🏆 전체 평가
+##  전체 평가
 **{grade}**
 
-## 📊 핵심 지표
+##  핵심 지표
 • **통과율**: {pass_rate:.1f}%
 • **통과 항목**: {pass_count}개
 • **실패 항목**: {fail_count}개
 • **치명적 이슈**: {critical_count}개
 
-## 💊 즉시 조치사항
+##  즉시 조치사항
 {"🔴 치명적 이슈가 발견되었습니다. 즉시 확인 필요!" if critical_count > 0 else "✅ 치명적 이슈가 발견되지 않았습니다."}
 
-## 📈 개선 방향
+##  개선 방향
 • 현재 통과율 {pass_rate:.1f}%에서 90% 이상 목표
 • 실패한 {fail_count}개 항목에 대한 단계적 개선
 • 정기적인 보안 점검으로 지속 관리
@@ -310,9 +310,9 @@ def get_security_summary() -> str:
         return summary
         
     except Exception as e:
-        return f"❌ 요약 생성 중 오류: {str(e)}"
+        return f" 요약 생성 중 오류: {str(e)}"
 
 if __name__ == "__main__":
-    print("🚀 안정적인 Prowler MCP Server 시작 중...")
-    print(f"📁 분석 대상 폴더: {OUTPUT_DIR}")
+    print(" 안정적인 Prowler MCP Server 시작 중...")
+    print(f" 분석 대상 폴더: {OUTPUT_DIR}")
     mcp.run()
