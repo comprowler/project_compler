@@ -1,0 +1,5 @@
+mcp>=1.0.0
+fastmcp~=2.10.6
+
+bs4~=0.0.2
+beautifulsoup4~=4.13.4
