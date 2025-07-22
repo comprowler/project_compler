@@ -163,7 +163,7 @@ def get_latest_prowler_file() -> str:
 """
     return result
 
-# @mcp.tool()
+@mcp.tool()
 def analyze_prowler_results() -> str:
     """최신 Prowler 결과를 분석하고 내용을 표시합니다."""
     latest_file, error = get_latest_file()
@@ -188,6 +188,7 @@ def analyze_prowler_results() -> str:
             analysis = analyze_csv_file(content, latest_file)
         elif file_ext in ['.json', '.json-asff']:
             analysis = analyze_json_file(content, latest_file)
+            # analysis = parse_prowler_report_asff_json(content)
         else:
             analysis = {
                 "file_type": f"텍스트 파일 ({file_ext})",
