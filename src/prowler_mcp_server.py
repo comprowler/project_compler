@@ -188,7 +188,7 @@ def analyze_prowler_results() -> str:
             analysis = analyze_csv_file(content, latest_file)
         elif file_ext in ['.json', '.json-asff']:
             analysis = analyze_json_file(content, latest_file)
-            # analysis = parse_prowler_report_asff_json(content)
+            analysis = parse_prowler_report_asff_json(content)
         else:
             analysis = {
                 "file_type": f"텍스트 파일 ({file_ext})",
@@ -256,6 +256,7 @@ def analyze_prowler_results() -> str:
 • **데이터 타입**: {analysis.get('data_type', '알 수 없음')}
 • **항목 수**: {analysis.get('item_count', 'N/A')}
 • **주요 키**: {', '.join(analysis.get('sample_keys', []))}
+• **점검 상태**: {analysis.get('keyword_counts', {})}
 """
 
         # 기타 파일
@@ -359,7 +360,10 @@ if __name__ == "__main__":
     else:
         print(" MCP 서버 실행을 건너뜁니다. (디버깅 모드)")
         with open(get_latest_file()[0], "r", encoding="utf-8") as f:
-            pp(analyze_html_file(f.read(), get_latest_file()[0]))
+            # pp(analyze_html_file(f.read(), get_latest_file()[0]))
             # pp(parse_prowler_report_html(f.read()), indent=2, width=250)
             # pp(parse_prowler_report_html_2(f.read(), ), indent=2, width=250)
-            print(analyze_prowler_results())
+            # print(parse_prowler_report_asff_json(f.read()))
+            # pp(analyze_json_file(f.read(), get_latest_file()[0]))
+            # print(analyze_prowler_results())
+            pass
