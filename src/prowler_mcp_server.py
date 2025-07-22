@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from fastmcp import FastMCP
-import argparse, sys
+import argparse
 from parser import *
 from pprint import pp
 
@@ -182,8 +182,8 @@ def analyze_prowler_results() -> str:
 
         if file_ext in ['.html', '.htm']:
             # analysis = analyze_html_file(content, latest_file)
-            # analysis = parse_prowler_result_html(f.read(), latest_file)
-            analysis = parse_prowler_html_report(f.read(), latest_file)
+            # analysis = parse_prowler_report_html_2(content, latest_file)
+            analysis = parse_prowler_report_html(content, latest_file)
         elif file_ext == '.csv':
             analysis = analyze_csv_file(content, latest_file)
         elif file_ext in ['.json', '.json-asff']:
@@ -216,7 +216,7 @@ def analyze_prowler_results() -> str:
         # HTML 파일 결과
         if analysis.get("file_type") == "Prowler HTML Report":
             keywords = analysis.get("keyword_counts", {})
-#TODO: 왜인지 아래 부분이 작동하지 않음. I/O operation on closed file. 이거랑 문제있는 것 같은데. 추가점검필요
+
             report += f"""
 ###  보안 점검 상태 (키워드 기반)
 • ✅ **PASS**: {keywords.get('PASS', 0)}개 발견
@@ -359,6 +359,6 @@ if __name__ == "__main__":
         print(" MCP 서버 실행을 건너뜁니다. (디버깅 모드)")
         with open(get_latest_file()[0], "r", encoding="utf-8") as f:
             pp(analyze_html_file(f.read(), get_latest_file()[0]))
-            # pp(parse_prowler_result_html(f.read()), indent=2, width=250)
-            # pp(parse_prowler_html_report(f.read(), ), indent=2, width=250)
+            # pp(parse_prowler_report_html(f.read()), indent=2, width=250)
+            # pp(parse_prowler_report_html_2(f.read(), ), indent=2, width=250)
             print(analyze_prowler_results())
