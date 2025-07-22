@@ -373,7 +373,7 @@ def get_prowler_reports_list() -> List[tuple]:
             file_stat = file.stat()
             if file.name == '.DS_Store':
                 continue
-            report_list.append((file.name, file, f'{round(file_stat.st_size/1024):,} MB', file.suffix))
+            report_list.append((file.name, file, f'{round(file_stat.st_size/1024):,} KB', file.suffix))
         return report_list
     except Exception as e:
         return [(f"❌ 파일 목록 가져오기 실패: {str(e)}",)]
