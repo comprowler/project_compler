@@ -167,9 +167,10 @@ def get_latest_prowler_file() -> str:
     return result
 
 @mcp.tool()
-def analyze_prowler_results(file_path) -> str:
+def analyze_prowler_results(file_path, file_preview_length:int=500) -> str:
     """Prowler 결과 파일을 분석하고 내용을 표시합니다.
     :param file_path: 분석할 Prowler 결과 파일 경로
+    :param file_preview_length: 미리보기 텍스트 길이 (기본값: 500자)
     :return: 분석 결과 문자열
     """
     # """최신 Prowler 결과를 분석하고 내용을 표시합니다."""
@@ -188,11 +189,11 @@ def analyze_prowler_results(file_path) -> str:
         if file_ext in ['.html', '.htm']:
             # analysis = analyze_html_file(content, latest_file)
             # analysis = parse_prowler_report_html_2(content, latest_file)
-            analysis = parse_prowler_report_html(file_content, file_path)
+            analysis = parse_prowler_report_html(file_content, file_preview_length)
         elif file_ext == '.csv':
             analysis = analyze_csv_file(file_content, file_path)
         elif file_ext in ['.json', '.json-asff']:
-            analysis = analyze_json_file(file_content, file_path)
+            # analysis = analyze_json_file(file_content, file_path)
             analysis = parse_prowler_report_asff_json(file_content)
         else:
             analysis = {
@@ -223,8 +224,8 @@ def analyze_prowler_results(file_path) -> str:
         if analysis.get("file_type") == "Prowler HTML Report":
             keywords = analysis.get("keyword_counts", {})
 
-            report += f"""
-###  보안 점검 상태 (키워드 기반)
+            report += \
+f"""###  보안 점검 상태 (키워드 기반)
 • ✅ **PASS**: {keywords.get('PASS', 0)}개 발견
 • ❌ **FAIL**: {keywords.get('FAIL', 0)}개 발견
 
@@ -378,6 +379,26 @@ def get_prowler_reports_list() -> List[tuple]:
     except Exception as e:
         return [(f"❌ 파일 목록 가져오기 실패: {str(e)}",)]
 
+@mcp.tool()
+def get_file_content(file_path: str) -> str:
+    """파일 내용을 가져옵니다.
+    :param file_path: 파일 경로
+    :return: 파일 내용
+    """
+    try:
+        file_path = Path(file_path)
+        if not file_path.exists():
+            return f"❌ 파일이 존재하지 않습니다: {file_path}"
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # 파일 내용이 2MB를 초과하면 미리보기만 제공
+        if len(content) > 2 * 1024 * 1024:  # 2MB
+            return f"📄 파일 내용이 너무 깁니다. 미리보기:\n{content[:2000]}..."
+        return content
+
+    except Exception as e:
+        return f"❌ 파일 읽기 실패: {str(e)}"
 
 if __name__ == "__main__":
     print(" 안정적인 Prowler MCP Server 시작 중...")

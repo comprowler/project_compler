@@ -4,7 +4,13 @@ import bs4
 import json
 
 
-def parse_prowler_report_html(html_content, preview_length=500) -> dict:
+def parse_prowler_report_html(html_content, preview_length:int=500) -> dict:
+    """
+    Prowler HTML 리포트 파싱 함수
+    :param html_content: HTML 컨텐츠 문자열
+    :param preview_length: 미리보기 텍스트 길이
+    :return:
+    """
     try:
         # 파일 읽기 및 크기
         # with open(file_path, 'r', encoding='utf-8') as f:
