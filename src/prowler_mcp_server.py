@@ -7,7 +7,10 @@ import json
 import os
 import re
 from datetime import datetime
+from idlelib.browser import file_open
 from pathlib import Path
+from typing import List
+
 from fastmcp import FastMCP
 import argparse
 from parser import *
@@ -164,37 +167,39 @@ def get_latest_prowler_file() -> str:
     return result
 
 @mcp.tool()
-def analyze_prowler_results() -> str:
-    """최신 Prowler 결과를 분석하고 내용을 표시합니다."""
-    latest_file, error = get_latest_file()
-
-    if error:
-        return f"❌ {error}"
-    
+def analyze_prowler_results(file_path) -> str:
+    """Prowler 결과 파일을 분석하고 내용을 표시합니다.
+    :param file_path: 분석할 Prowler 결과 파일 경로
+    :return: 분석 결과 문자열
+    """
+    # """최신 Prowler 결과를 분석하고 내용을 표시합니다."""
+    # latest_file, error = get_latest_file()
+    # if error:
+    #     return f"❌ {error}"
+    file_path = Path(file_path)
     try:
-        content = ""  # 초기화
         # 파일 읽기
-        with open(latest_file, 'r', encoding='utf-8') as f:
-            content = f.read()
+        with open(file_path, 'r', encoding='utf-8') as file:
+            file_content = file.read()
         
         # 파일 확장자에 따른 분석
-        file_ext = latest_file.suffix.lower()
+        file_ext = file_path.suffix.lower()
 
         if file_ext in ['.html', '.htm']:
             # analysis = analyze_html_file(content, latest_file)
             # analysis = parse_prowler_report_html_2(content, latest_file)
-            analysis = parse_prowler_report_html(content, latest_file)
+            analysis = parse_prowler_report_html(file_content, file_path)
         elif file_ext == '.csv':
-            analysis = analyze_csv_file(content, latest_file)
+            analysis = analyze_csv_file(file_content, file_path)
         elif file_ext in ['.json', '.json-asff']:
-            analysis = analyze_json_file(content, latest_file)
-            analysis = parse_prowler_report_asff_json(content)
+            analysis = analyze_json_file(file_content, file_path)
+            analysis = parse_prowler_report_asff_json(file_content)
         else:
             analysis = {
                 "file_type": f"텍스트 파일 ({file_ext})",
-                "content_length": len(content),
-                "line_count": len(content.splitlines()),
-                "preview": content[:200] + "..." if len(content) > 200 else content
+                "content_length": len(file_content),
+                "line_count": len(file_content.splitlines()),
+                "preview": file_content[:200] + "..." if len(file_content) > 200 else file_content
             }
 
         # 오류 체크
@@ -206,9 +211,9 @@ def analyze_prowler_results() -> str:
 # 🛡️ Prowler 결과 분석
 
 ##  파일 정보
-• **파일명**: {latest_file.name}
-• **크기**: {latest_file.stat().st_size:,} bytes
-• **수정일**: {datetime.fromtimestamp(latest_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
+• **파일명**: {file_path.name}
+• **크기**: {file_path.stat().st_size:,} bytes
+• **수정일**: {datetime.fromtimestamp(file_path.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
 • **파일 유형**: {analysis.get('file_type', '알 수 없음')}
 
 ##  분석 결과
@@ -292,21 +297,21 @@ def analyze_prowler_results() -> str:
         return f"❌ 파일 분석 중 오류 발생: {str(e)}"
 
 @mcp.tool()
-def get_security_summary() -> str:
+def get_security_summary(file_path) -> str:
     """보안 상태 간단 요약을 제공합니다."""
-    latest_file, error = get_latest_file()
-    
-    if error:
-        return f"❌ {error}"
-    
+    # latest_file, error = get_latest_file()
+    #
+    # if error:
+    #     return f"❌ {error}"
+    file_path = Path(file_path)
     try:
-        with open(latest_file, 'r', encoding='utf-8') as f:
-            content = f.read()
+        with open(file_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
         
         # 간단한 통계
-        pass_count = len(re.findall(r'\bPASS\b', content, re.IGNORECASE))
-        fail_count = len(re.findall(r'\bFAIL\b', content, re.IGNORECASE))
-        critical_count = len(re.findall(r'\bCRITICAL\b', content, re.IGNORECASE))
+        pass_count = len(re.findall(r'\bPASS\b', file_content, re.IGNORECASE))
+        fail_count = len(re.findall(r'\bFAIL\b', file_content, re.IGNORECASE))
+        critical_count = len(re.findall(r'\bCRITICAL\b', file_content, re.IGNORECASE))
         
         total_checks = pass_count + fail_count
         pass_rate = (pass_count / total_checks * 100) if total_checks > 0 else 0
@@ -341,7 +346,7 @@ def get_security_summary() -> str:
 • 실패한 {fail_count}개 항목에 대한 단계적 개선
 • 정기적인 보안 점검으로 지속 관리
 
-**파일**: {latest_file.name}
+**파일**: {file_path.name}
 **분석 시점**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
         
@@ -349,6 +354,30 @@ def get_security_summary() -> str:
         
     except Exception as e:
         return f" 요약 생성 중 오류: {str(e)}"
+
+@mcp.tool()
+def get_prowler_reports_list() -> List[tuple]:
+    """Prowler 결과 파일 목록을 가져옵니다.
+    :param
+        None
+    :return:
+        list[]: Prowler 결과 파일 목록
+    """
+    try:
+        files = [f for f in OUTPUT_DIR.iterdir() if f.is_file()]
+        if not files:
+            return []
+
+        report_list = []
+        for file in sorted(files, key=lambda f: f.stat().st_mtime, reverse=True):
+            file_stat = file.stat()
+            if file.name == '.DS_Store':
+                continue
+            report_list.append((file.name, file, f'{round(file_stat.st_size/1024):,} MB', file.suffix))
+        return report_list
+    except Exception as e:
+        return [(f"❌ 파일 목록 가져오기 실패: {str(e)}",)]
+
 
 if __name__ == "__main__":
     print(" 안정적인 Prowler MCP Server 시작 중...")
@@ -360,10 +389,5 @@ if __name__ == "__main__":
     else:
         print(" MCP 서버 실행을 건너뜁니다. (디버깅 모드)")
         with open(get_latest_file()[0], "r", encoding="utf-8") as f:
-            # pp(analyze_html_file(f.read(), get_latest_file()[0]))
-            # pp(parse_prowler_report_html(f.read()), indent=2, width=250)
-            # pp(parse_prowler_report_html_2(f.read(), ), indent=2, width=250)
-            # print(parse_prowler_report_asff_json(f.read()))
-            # pp(analyze_json_file(f.read(), get_latest_file()[0]))
-            # print(analyze_prowler_results())
             pass
+            # print(get_prowler_reports_list())
