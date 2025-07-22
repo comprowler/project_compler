@@ -1,4 +1,75 @@
 # Prowler MCP Server for Claude Desktop by Compler
+This is an MCP server that analyzes Prowler security scan results.
+
+## Features
+-`get_latest_prowler_file`: Retrieve latest file information
+-`analyze_prowler_results`: Detailed security analysis (now supports a file_preview_length parameter for controlling text preview length)
+-`get_security_summary`: Security status summary
+-`get_prowler_reports_list`: Retrieve a list of Prowler report files.
+-`get_file_content`: Retrieve the content of a specified file.
+
+## Structure
+```
+compler-mcp-claude_desktop/
+├── src/
+│   └── prowler_mcp_server.py     # Main MCP server
+├── config/
+│   └── claude_desktop_config.json # Claude Desktop settings >> Due to config conflict, using fastmcp's own functionality. (fastmcp install claude-desktop src\prowler_mcp_server.py:mcp)
+├── logs/                         # Log files
+├── requirements.txt              # Python dependencies
+├── run.bat                       # Execution script
+└── README.md                     # This file
+```
+
+## Installation and Execution
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Claude Desktop Configuration
+Copy `config/claude_desktop_config.json` content to Claude Desktop settings:
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+### 3. Test Execution
+# Direct execution
+```bash
+python src\prowler_mcp_server.py
+
+# Or execute with batch file
+
+run.bat
+```
+
+### 4. Restart Claude Desktop
+Completely close and restart Claude Desktop
+
+
+## Analysis Target
+Path: `./prowler-reports` (This directory is automatically created relative to the project root.)
+
+Supported Formats: HTML, CSV, JSON, JSON-ASFF, and general text files.
+
+Prowler ASFF results specialized analysis
+
+## References (Additional needed)
+-[Prowler Official Documentation](https://docs.prowler.com/projects/prowler-open-source/en/latest/tutorials/prowler-app/)
+-[KISA-ISMS-P Compliance](https://hub.prowler.com/compliance/kisa_isms_p_2023_aws)
+
+## Support
+```
+ye11oc4t@gmail.com or Discord re-tired
+woohyun212@gmail.com or Discord a_b_normal
+```
+
+
+___
+
+
+
+# Prowler MCP Server for Claude Desktop by Compler
 
 Prowler 보안 점검 결과를 분석하는 MCP 서버입니다.
 
@@ -46,8 +117,8 @@ run.bat
 Claude Desktop을 완전히 종료하고 다시 시작
 
 ##  분석 대상
-- 경로: `C:\Users\김서연\Desktop\whs-compler-mcp\output`
-- 지원 형식: JSON, JSON-ASFF, 텍스트 파일
+- 경로: `./prowler-reports` (이 디렉토리는 프로젝트 루트를 기준으로 자동으로 생성됩니다.) 
+- 지원 형식: HTML, CSV, JSON, JSON-ASFF, 텍스트 파일
 - Prowler ASFF 결과 특화 분석
 
 ## 참고 자료 (추가 필요)
@@ -55,7 +126,7 @@ Claude Desktop을 완전히 종료하고 다시 시작
 - [KISA-ISMS-P 컴플라이언스](https://hub.prowler.com/compliance/kisa_isms_p_2023_aws)
 
 ## 지원
-ye11oc4t@gmail.com 
-or Discord re-tired
-
->>2025.07.20 기준 필요한 기능: html, json_asff 파일 파싱(Claude가 바로 읽지 못함)
+```
+ye11oc4t@gmail.com or Discord re-tired
+woohyun212@gmail.com or Discord a_b_normal
+```
