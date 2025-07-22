@@ -1,5 +1,7 @@
 import os
+import sys
 import bs4
+import json
 
 
 def parse_prowler_report_html(html_content, preview_length=500) -> dict:
@@ -42,7 +44,48 @@ def parse_prowler_report_html(html_content, preview_length=500) -> dict:
             'text_preview': text_preview
         }
     except Exception as e:
-        print(f"Error parsing HTML report: {e}")
+        print(f"Error parsing HTML report: {e}", file=sys.stderr)
         return {"error": str(e)}
 
 
+def parse_prowler_report_asff_json(json_content, preview_length=500) -> dict:
+    try:
+        # JSON 파싱
+        findings = json.loads(json_content)
+
+        # 키워드 카운트
+        keyword_list = ['PASS', 'FAIL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+        keyword_counts = {k: 0 for k in keyword_list}
+        for finding in findings:
+            # 상태(Compliance.Status)와 심각도(Severity.Label)
+            compliance_status = finding.get("Compliance", {}).get("Status", "").upper()
+            severity_label = finding.get("Severity", {}).get("Label", "").upper()
+            if compliance_status == "PASSED":
+                compliance_status = "PASS"
+            else:
+                compliance_status = "FAIL"
+            keyword_counts[compliance_status] += 1
+            keyword_counts[severity_label] += 1
+
+        # 미리보기 텍스트
+        text_preview = json_content[:preview_length]
+
+        # 결과 dict
+        return {
+            'file_type': 'Prowler JSON Report',
+            # 'file_size': file_size,
+            # 'text_length': text_length,
+            'keyword_counts': keyword_counts,
+            'text_preview': text_preview
+        }
+
+    except Exception as e:
+        print(f"Error parsing ASFF JSON report: {e}")
+        return {"error": str(e)}
+
+if __name__ == "__main__":
+    report = "../prowler-reports/prowler-report-20250715-011202.asff.json"
+    with open(report, 'r', encoding='utf-8') as f:
+        content = f.read()
+    result = parse_prowler_report_asff_json(content)
+    print(result)
