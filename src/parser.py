@@ -12,12 +12,6 @@ def parse_prowler_report_html(html_content, preview_length:int=500) -> dict:
     :return:
     """
     try:
-        # 파일 읽기 및 크기
-        # with open(file_path, 'r', encoding='utf-8') as f:
-        #     html_content = f.read()
-        # file_size = os.path.getsize(file_path)
-        # text_length = len(html_content)
-
         # BeautifulSoup 파싱
         soup = bs4.BeautifulSoup(html_content, 'html.parser')
 
