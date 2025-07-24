@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 """
-안정적인 Prowler 분석 MCP 서버 (HTML, CSV, JSON 지원)
+안정적인 Prowler 분석 MCP 서버 (HTML, CSV, JSON 지원) + IaC YAML Writer
 """
 
 import json
 import os
 import re
+import yaml
+import logging
 from datetime import datetime
 from idlelib.browser import file_open
 from pathlib import Path
-from typing import List
+from typing import List, Annotated
 
 import requests
 from fastmcp import FastMCP
 import argparse
 from parser import *
 from pprint import pp
+from pydantic import BaseModel, Field, ValidationError
+
+# Configure logging for YAML writer
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # FastMCP 앱 초기화
-mcp = FastMCP("Prowler Analyzer")
+mcp = FastMCP("Prowler Analyzer with IaC YAML Writer")
 
 # 분석할 output 폴더 경로  
 # OUTPUT_DIR = Path(r"C:\Users\김서연\Desktop\whs-compler-mcp\output")
@@ -26,6 +33,61 @@ BASEDIR = Path(__file__).resolve().parent.parent
 # print(BASEDIR.joinpath("./output"))
 OUTPUT_DIR = BASEDIR.joinpath("prowler-reports")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# IaC YAML Writer 설정
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent  # 프로젝트 루트 디렉토리 (src 폴더의 상위)
+IAC_OUTPUT_DIR = PROJECT_ROOT.joinpath("IaC_output")
+
+# Create IaC_output directory if it doesn't exist
+try:
+    IAC_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info(f"IaC_output directory ensured at: {IAC_OUTPUT_DIR}")
+except Exception as e:
+    logger.critical(f"Failed to create IaC_output directory: {e}")
+    raise
+
+_iac_root_path = IAC_OUTPUT_DIR.resolve()
+logger.info(f"IaC root directory set to: {_iac_root_path}")
+
+# --- Pydantic Model Definition for YAML Writer ---
+class YamlWriteParameters(BaseModel):
+    """Parameters for writing a YAML file."""
+    path: Annotated[str, Field(description="Path to the YAML file relative to IaC_output directory")]
+    content: Annotated[str, Field(description="The YAML content as a string.")]
+    create_dirs: Annotated[bool, Field(default=False, description="Whether to create parent directories if they do not exist.")]
+
+# --- Utility Functions for YAML Writer ---
+def _is_path_safe(root_path: str, target_path: str) -> bool:
+    """
+    Checks if the target_path is safely within the root_path.
+    Prevents directory traversal attacks.
+    """
+    if not root_path:
+        logger.error("Root path is not set, cannot check path safety.")
+        return False
+    try:
+        abs_root = os.path.abspath(root_path)
+        abs_target = os.path.abspath(os.path.join(root_path, target_path))
+        is_safe = abs_target.startswith(abs_root)
+        logger.debug(f"Path safety check: root='{abs_root}', target='{abs_target}', safe={is_safe}")
+        return is_safe
+    except Exception as e:
+        logger.error(f"Error during path safety check: {e}")
+        return False
+
+def set_iac_root_directory(root_dir: str):
+    """Set the IaC root directory."""
+    global _iac_root_path
+    try:
+        if not os.path.isdir(root_dir):
+            logger.info(f"Creating IaC root directory: {root_dir}")
+            os.makedirs(root_dir, exist_ok=True)
+        _iac_root_path = os.path.abspath(root_dir)
+        logger.info(f"IaC root directory set to: {_iac_root_path}")
+    except Exception as e:
+        logger.critical(f"Failed to set IaC root directory '{root_dir}': {e}")
+        raise
 
 def parse_args():
     """명령줄 인자 파싱"""
@@ -144,6 +206,8 @@ def analyze_json_file(content, file_path):
         return {"error": f"JSON 파싱 오류: {str(e)}"}
     except Exception as e:
         return {"error": f"JSON 분석 오류: {str(e)}"}
+
+# ========== PROWLER ANALYSIS TOOLS ==========
 
 @mcp.tool()
 def get_latest_prowler_file() -> str:
@@ -423,16 +487,183 @@ def get_cloud_custodian_aws_resource_reference_html(resource_name: str) -> str:
         print(f"Error fetching resource reference for {resource_name}: {e}")
         return f"{resource_name.capitalize()} (reference not available)"
 
+# ========== IAC YAML WRITER TOOLS ==========
+
+@mcp.tool()
+def write_yaml_file(
+    path: Annotated[str, Field(description="Path to the YAML file to write. Must be relative to the IaC_output directory.")],
+    content: Annotated[str, Field(description="The YAML content as a string.")],
+    create_dirs: Annotated[bool, Field(default=False, description="Whether to create parent directories if they do not exist.")] = False
+) -> str:
+    """Write YAML content to the specified file in the IaC_output directory."""
+    logger.info(f"Writing YAML file: path='{path}', create_dirs={create_dirs}")
+    
+    # Validate parameters using Pydantic
+    try:
+        params = YamlWriteParameters(path=path, content=content, create_dirs=create_dirs)
+        logger.info(f"Parameters validated: path='{params.path}', create_dirs={params.create_dirs}")
+    except ValidationError as e:
+        error_msg = f"Invalid parameters for write-yaml-file: {e.errors()}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    # Check path safety
+    if not _is_path_safe(str(_iac_root_path), params.path):
+        error_msg = f"Unsafe path '{params.path}' outside root directory '{_iac_root_path}'"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    full_file_path = _iac_root_path / params.path
+    directory = full_file_path.parent
+    logger.info(f"Full target path: '{full_file_path}', Directory: '{directory}'")
+
+    try:
+        # Create directories if needed
+        if params.create_dirs:
+            if not directory.exists():
+                logger.info(f"Creating parent directories for '{directory}'")
+                directory.mkdir(parents=True, exist_ok=True)
+            else:
+                logger.debug(f"Directory '{directory}' already exists")
+        elif not directory.exists():
+            error_msg = f"Parent directory '{directory}' does not exist and create_dirs is false"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Validate YAML content
+        try:
+            yaml.safe_load(params.content)
+            logger.info("YAML content is valid")
+        except yaml.YAMLError as e:
+            error_msg = f"Invalid YAML content: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Write the file
+        logger.info(f"Writing to file: '{full_file_path}'")
+        with open(full_file_path, 'w', encoding='utf-8') as f:
+            f.write(params.content)
+        
+        success_msg = f"Successfully wrote YAML to '{params.path}' in IaC_output directory: {full_file_path}"
+        logger.info(success_msg)
+        return success_msg
+
+    except IOError as e:
+        error_msg = f"Failed to write file '{params.path}': {e}"
+        logger.error(error_msg)
+        raise IOError(error_msg)
+    except Exception as e:
+        error_msg = f"Unexpected error during file operation: {e}"
+        logger.critical(error_msg, exc_info=True)
+        raise Exception(error_msg)
+
+@mcp.tool()
+def create_iac_directory(
+    directory_path: Annotated[str, Field(description="Directory path to create relative to IaC_output directory")]
+) -> str:
+    """Create a directory in the IaC_output folder."""
+    logger.info(f"Creating directory: {directory_path}")
+    
+    # Check path safety
+    if not _is_path_safe(str(_iac_root_path), directory_path):
+        error_msg = f"Unsafe path '{directory_path}' outside root directory '{_iac_root_path}'"
+        logger.error(error_msg)
+        return error_msg
+
+    full_dir_path = _iac_root_path / directory_path
+    
+    try:
+        full_dir_path.mkdir(parents=True, exist_ok=True)
+        success_msg = f"Successfully created directory: {full_dir_path}"
+        logger.info(success_msg)
+        return success_msg
+    except Exception as e:
+        error_msg = f"Failed to create directory '{directory_path}': {e}"
+        logger.error(error_msg)
+        return error_msg
+
+@mcp.tool()
+def list_iac_files() -> str:
+    """List all files in the IaC_output directory."""
+    try:
+        if not _iac_root_path.exists():
+            return f"IaC_output directory does not exist: {_iac_root_path}"
+        
+        files = []
+        for item in _iac_root_path.rglob("*"):
+            if item.is_file():
+                relative_path = item.relative_to(_iac_root_path)
+                file_size = item.stat().st_size
+                modified_time = datetime.fromtimestamp(item.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                files.append(f"📄 {relative_path} ({file_size:,} bytes, modified: {modified_time})")
+        
+        if not files:
+            return f"No files found in IaC_output directory: {_iac_root_path}"
+        
+        return f"""
+# 📁 IaC Output Directory Contents
+
+**Location**: {_iac_root_path}
+
+## Files:
+""" + "\n".join(files)
+
+    except Exception as e:
+        error_msg = f"Failed to list IaC files: {e}"
+        logger.error(error_msg)
+        return error_msg
+
+@mcp.tool()
+def get_iac_file_content(
+    file_path: Annotated[str, Field(description="Path to the file relative to IaC_output directory")]
+) -> str:
+    """Get the content of a file in the IaC_output directory."""
+    # Check path safety
+    if not _is_path_safe(str(_iac_root_path), file_path):
+        error_msg = f"Unsafe path '{file_path}' outside root directory '{_iac_root_path}'"
+        logger.error(error_msg)
+        return error_msg
+
+    full_file_path = _iac_root_path / file_path
+    
+    try:
+        if not full_file_path.exists():
+            return f"File does not exist: {file_path}"
+        
+        if not full_file_path.is_file():
+            return f"Path is not a file: {file_path}"
+        
+        with open(full_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return f"""
+# 📄 File Content: {file_path}
+
+**Full Path**: {full_file_path}
+**Size**: {len(content):,} characters
+
+## Content:
+```yaml
+{content}
+```
+"""
+    
+    except Exception as e:
+        error_msg = f"Failed to read file '{file_path}': {e}"
+        logger.error(error_msg)
+        return error_msg
+
 
 if __name__ == "__main__":
-    print("Prowler MCP Server 시작 중...")
-    print(f" 분석 대상 폴더: {OUTPUT_DIR}")
+    print("Prowler MCP Server with IaC YAML Writer 시작 중...")
+    print(f"📊 Prowler 분석 대상 폴더: {OUTPUT_DIR}")
+    print(f"📝 IaC YAML 출력 폴더: {IAC_OUTPUT_DIR}")
     args = parse_args()
     if not args.no_mcp_run:
-        print(" MCP 서버 실행 중...")
+        print("🚀 MCP 서버 실행 중...")
         mcp.run()
     else:
-        print(" MCP 서버 실행을 건너뜁니다. (디버깅 모드)")
+        print("🔧 MCP 서버 실행을 건너뜁니다. (디버깅 모드)")
         with open(get_latest_file()[0], "r", encoding="utf-8") as f:
             pass
             # print(get_prowler_reports_list())
