@@ -11,6 +11,7 @@ from idlelib.browser import file_open
 from pathlib import Path
 from typing import List
 
+import requests
 from fastmcp import FastMCP
 import argparse
 from parser import *
