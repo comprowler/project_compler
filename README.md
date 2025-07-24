@@ -34,7 +34,7 @@ Copy `config/claude_desktop_config.json` content to Claude Desktop settings:
 ```
 
 #### claude_desktop_config.json
-```
+```json
 {
   "mcpServers": {
     "Prowler Analyzer": {
@@ -130,7 +130,7 @@ pip install -r requirements.txt
 ```
 
 #### claude_desktop_config.json
-```
+```json
 {
   "mcpServers": {
     "Prowler Analyzer": {
