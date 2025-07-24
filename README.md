@@ -33,6 +33,31 @@ Copy `config/claude_desktop_config.json` content to Claude Desktop settings:
 %APPDATA%\Claude\claude_desktop_config.json
 ```
 
+#### claude_desktop_config.json
+```
+{
+  "mcpServers": {
+    "Prowler Analyzer": {
+      "command": "{uv-path}/uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "--with",
+        "beautifulsoup4",
+        "--with",
+        "requests",
+        "fastmcp",
+        "run",
+        "{project-path}/src/prowler_mcp_server.py:mcp"
+      ],
+      "env": {},
+      "transport": "stdio"
+    }
+  }
+}
+```
+
 ### 3. Test Execution
 # Direct execution
 ```bash
@@ -103,6 +128,32 @@ pip install -r requirements.txt
 ```
 %APPDATA%\Claude\claude_desktop_config.json
 ```
+
+#### claude_desktop_config.json
+```
+{
+  "mcpServers": {
+    "Prowler Analyzer": {
+      "command": "{uv-path}/uv",
+      "args": [
+        "run",
+        "--with",
+        "fastmcp",
+        "--with",
+        "beautifulsoup4",
+        "--with",
+        "requests",
+        "fastmcp",
+        "run",
+        "{project-path}/src/prowler_mcp_server.py:mcp"
+      ],
+      "env": {},
+      "transport": "stdio"
+    }
+  }
+}
+```
+
 
 ### 3. 테스트 실행
 ```bash
