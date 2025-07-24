@@ -400,8 +400,31 @@ def get_file_content(file_path: str) -> str:
     except Exception as e:
         return f"❌ 파일 읽기 실패: {str(e)}"
 
+
+@mcp.tool()
+def get_cloud_custodian_asw_resource_reference_html(resource_name: str) -> str:
+    """
+    Generate HTML reference for a given AWS resource name.
+    :param resource_name: str - Name of the AWS resource ("s3", "iam-role", "iam-user", "security-group", "cloudtrail", "ec2", "rds", "vpc", "lambda", "kms")
+    :return: HTML string with the resource reference.
+    """
+    url = f"https://cloudcustodian.io/docs/aws/resources/{resource_name}.html"
+    if resource_name not in {
+        "s3", "iam-role", "iam-user", "security-group", "cloudtrail",
+        "ec2", "rds", "vpc", "lambda", "kms"
+    }:
+        return f"{resource_name} is not a valid resource name., please use one of the following: s3, iam-role, iam-user, security-group, cloudtrail, ec2, rds, vpc, lambda, kms."
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+        return response.text
+    except requests.RequestException as e:
+        print(f"Error fetching resource reference for {resource_name}: {e}")
+        return f"{resource_name.capitalize()} (reference not available)"
+
+
 if __name__ == "__main__":
-    print(" 안정적인 Prowler MCP Server 시작 중...")
+    print("Prowler MCP Server 시작 중...")
     print(f" 분석 대상 폴더: {OUTPUT_DIR}")
     args = parse_args()
     if not args.no_mcp_run:
