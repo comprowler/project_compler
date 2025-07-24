@@ -403,7 +403,7 @@ def get_file_content(file_path: str) -> str:
 
 
 @mcp.tool()
-def get_cloud_custodian_asw_resource_reference_html(resource_name: str) -> str:
+def get_cloud_custodian_aws_resource_reference_html(resource_name: str) -> str:
     """
     Generate HTML reference for a given AWS resource name.
     :param resource_name: str - Name of the AWS resource ("s3", "iam-role", "iam-user", "security-group", "cloudtrail", "ec2", "rds", "vpc", "lambda", "kms")
