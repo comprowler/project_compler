@@ -24,7 +24,7 @@ compler-mcp-claude_desktop/
 ## Installation and Execution
 ### 1. Install Dependencies
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Claude Desktop Configuration
@@ -120,7 +120,7 @@ compler-mcp-claude_desktop/
 
 ### 1. 의존성 설치
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Claude Desktop 설정
