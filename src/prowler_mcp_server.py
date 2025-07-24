@@ -301,10 +301,6 @@ f"""###  Security Check Status (Keyword-based)
 @mcp.tool()
 def get_security_summary(file_path) -> str:
     """Provides a brief security summary."""
-    # latest_file, error = get_latest_file()
-    #
-    # if error:
-    #     return f"❌ {error}"
     file_path = Path(file_path)
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
