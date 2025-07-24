@@ -59,8 +59,8 @@ Copy `config/claude_desktop_config.json` content to Claude Desktop settings:
 ```
 
 ### 3. Test Execution
-# Direct execution
 ```bash
+# Direct execution
 python src\prowler_mcp_server.py
 
 # Or execute with batch file
